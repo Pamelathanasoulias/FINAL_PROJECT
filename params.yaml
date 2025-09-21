@@ -1,0 +1,14 @@
+data:
+  raw_data: "data/raw/WEATHER.csv"
+
+time:
+  datetime_col: "date"
+  freq: "10min"
+  forecast_horizon: 300
+
+features:
+  target: "T"
+  exogenous: ["p", "rh"]
+
+split:
+  test_size_ratio: 0.2
