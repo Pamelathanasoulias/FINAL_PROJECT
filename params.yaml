@@ -1,14 +1,13 @@
+# THE PATH
 data:
   raw_data: "data/raw/WEATHER.csv"
 
-time:
-  datetime_col: "date"
-  freq: "10min"
-  forecast_horizon: 300
+# THE OLUMNS
+the_time: "DATE"
+the_target: "T"
+the_features: ["T", "P", "RH"]
 
-features:
-  target: "T"
-  exogenous: ["p", "rh"]
-
-split:
-  test_size_ratio: 0.2
+# MODEL PARAMETERS | # 12 MONTHS OR PERIODS
+test_size: 12
+the_arima_order: [1, 1, 1] 
+the_mlflow : "temperature_forecast"
