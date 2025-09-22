@@ -4,49 +4,57 @@ from darts import TimeSeries
 from darts.utils.model_selection import train_test_split
 
 
-# SAVE CONFIG + DATAFRAME
+# TRANSFORM
 class DataTransformation:
     def __init__(self, df: pd.DataFrame, config: Dict[str, Any]):
         self.config = config
         self.df = df.copy()
 
-        # PLACEHOLDERS
-        self.ts_target: TimeSeries | None = None
-        self.ts_features: TimeSeries | None = None
+        # PLACEHOLDERS FOR DARTS SERIES
+        self.series_target: TimeSeries | None = None
+        self.series_features: TimeSeries | None = None
 
-    # SELECT ONLY TIME,  TARGET & FEATURES
-    def select_columns(self) -> pd.DataFrame:
-        needed = [self.config["the_time"], self.config["the_target"]] + self.config["the_features"]
-        self.df = self.df[needed].copy()
-        return self.df
-
-    # FORMAT TIME COLUMN & SORT 
-    def format_time(self) -> pd.DataFrame:
-        time_col = self.config["the_time"]
-        self.df[time_col] = pd.to_datetime(self.df[time_col])
-        self.df = self.df.sort_values(time_col).reset_index(drop=True)
-        return self.df
-
-    # CONVERT TO DARTS TIMESERIES
-    def build_series(self) -> Tuple[TimeSeries, TimeSeries | None]:
-        time_col = self.config["the_time"]
-        target_col = self.config["the_target"]
-        feature_cols = [c for c in self.config["the_features"] if c != target_col]
-
-        self.ts_target = TimeSeries.from_dataframe(self.df, time_col=time_col, value_cols=target_col)
-        self.ts_features = (TimeSeries.from_dataframe(self.df, time_col=time_col, value_cols=feature_cols)
-            if len(feature_cols) > 0
-            else None)
+    # KEEP  TIME, TARGET & FEATURES | DATETIME + SORT
+    def the_columns(self) -> pd.DataFrame:
+        t = self.config["the_time"]
+        y = self.config["the_target"]
         
-        return self.ts_target, self.ts_features
+        all_features = list(self.config["the_features"])
 
-    # TRAIN/TEST SPLIT
+
+        the_columns = [t, y] + all_features
+       
+        self.df = self.df[the_columns].copy()
+        self.df[t] = pd.to_datetime(self.df[t])
+        self.df = self.df.sort_values(t).reset_index(drop=True)
+       
+        return self.df
+
+
+    # BUILD SERIES FOR DARTS
+    def build_series(self) -> Tuple[TimeSeries, TimeSeries | None]:
+        t = self.config["the_time"]
+        y = self.config["the_target"]
+        series_features_only = [c for c in self.config["the_features"] if c != y]
+
+        self.series_target = TimeSeries.from_dataframe(self.df, time_col=t, value_cols=y)
+        self.series_features = (TimeSeries.from_dataframe(self.df, time_col=t, value_cols=series_features_only)
+            if series_features_only else None)
+        
+        return self.series_target, self.series_features
+
+
+    # TRAIN / TEST SPLIT
     def divide_series(self, test_size: int | None = None) -> Tuple[TimeSeries, TimeSeries]:
-        if self.ts_target is None:
-            raise ValueError("CALL build_series() FIRST")
-
+        if self.series_target is None:
+            raise ValueError("ERROR: CALL build_series() FIRST")
+       
         if test_size is None:
             test_size = int(self.config.get("test_size", 12))
-
-        train, test = train_test_split(self.ts_target, test_size=test_size)
+        train, test = train_test_split(self.series_target, test_size=test_size)
+        
         return train, test
+
+    # SAVE CLEAN DATAFRAME TO CSV IN data/processed/
+    def cleaned_data(self, path: str = "data/processed/CLEAN_WEATHER.csv") -> None:
+        self.df.to_csv(path, index=False)
