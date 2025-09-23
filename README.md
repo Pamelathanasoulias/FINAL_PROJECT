@@ -1,6 +1,6 @@
 # TEMPERATURE TIME SERIES ML PROJECT
 
-FINAL SCHOOL PROJECT | TIME SERIES FORECASTING USING PYTHON, DARTS, MLFLOW AND SPHINX
+FINAL SCHOOL PROJECT | TIME SERIES FORECASTING USING PYTHON, DARTS, MLFLOW AND SPHINX.
 
 
 # DATASET: WEATHER | KAGGLE : LONG TERM TIME SERIES FORECASTING
@@ -14,7 +14,7 @@ DOWNLOAD WEATHER.CSV FROM KAGGLE AND PLACE IT IN data/raw/ BEFORE RUNNING.
 
 # MAIN FEATURES
 
-We are using temperature T, pressure p, relative humidity rh as the main features for forecasting
+We are using temperature T, pressure p, relative humidity rh as the main features for forecasting.
 
 
 # MAIN COLUMNS
@@ -38,8 +38,13 @@ Other columns are available in the raw dataset but not all are used in this proj
 - Python 3.11
 - Environment : final_env
 - Libraries : requirements.txt
+
 - Modular structure : src folder with transform.py and model.py
 - Forecasting with Darts | 2 models predicting 300 future time steps
+- Plots and metrics saved in report.py
+
 - Experiment tracking with MLflow : parameters and errors
 - Documentation with Sphinx
 - Version control and collaboration : GitHub
+
+
