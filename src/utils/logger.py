@@ -1,3 +1,6 @@
+"""Loguru setup writing ERROR & logs to logs/logfile.log."""
+
+
 from loguru import logger
 
 # LOGGING CONFIGURATION

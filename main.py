@@ -1,3 +1,5 @@
+"""Project entry point | load config, transform data, run models and save report."""
+
 from src.utils.input import YAMLLoader, CSVLoader
 from src.transform import WeatherTransform
 from src.model import WeatherModels
@@ -5,6 +7,8 @@ from src.utils.report import the_report
 
 
 def the_main():
+    """Run the full pipeline: load config, transform data, train models, and save report."""
+
     # CONFIG
     params = YAMLLoader().load_file("params.yaml")
 
