@@ -1,49 +1,77 @@
-# MODEL | ARIMA
-from typing import Dict, Any
+from typing import Optional, Dict
+import mlflow
 from darts import TimeSeries
-from darts.models import ARIMA
-from darts.models import ExponentialSmoothing
-from darts.metrics import smape
+from darts.metrics import mape, mae, mse
+from darts.models import ARIMA, LinearRegressionModel
 
 
-class TheModel:
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        self.arima = None
 
-    def arima_model(self) -> ARIMA:
-        p, d, q = self.config.get("the_arima_order", [1, 1, 1])
-        self.arima = ARIMA(order=(p, d, q))
-        return self.arima
+class WeatherModels:
+    def __init__(self, the_train: TimeSeries, the_test: TimeSeries, the_covariates: Optional[TimeSeries], params: Dict):
 
-    def arima_fit(self, train_y: TimeSeries) -> None:
-        if self.arima is None:
-            self.arima_model()
-        self.arima.fit(train_y)
+        # SERIES
+        self.the_train = the_train
+        self.the_test = the_test
+        self.the_covariates = the_covariates
 
-    def arima_predict(self, horizon: int) -> TimeSeries:
-        return self.arima.predict(horizon)
+        # TEST LENGTH
+        self.the_steps = len(the_test)
 
-    def arima_score(self, y_true: TimeSeries, y_pred: TimeSeries) -> float:
-        return float(smape(y_true, y_pred))
-    
+        # MLFLOW
+        self.the_experiment = params.get("the_mlflow", "temperature_forecast")
 
-class TheSecondModel:
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        self.exponential = None
+    # TEMPLATE | TRAIN, PREDICT & LOG
+    def model_template(self, the_name: str, the_model):
 
-    def exponential_model(self) -> ExponentialSmoothing:
-        self.exponential = ExponentialSmoothing()
-        return self.exponential
+        mlflow.set_experiment(self.the_experiment)
+        with mlflow.start_run(run_name=the_name):
 
-    def exponential_fit(self, train_y: TimeSeries) -> None:
-        if self.exponential is None:
-            self.exponential_model()
-        self.exponential.fit(train_y)
+            
+            if isinstance(the_model, LinearRegressionModel) and self.the_covariates is not None:
+                the_model.fit(self.the_train, past_covariates=self.the_covariates)
+                the_pred = the_model.predict(self.the_steps, past_covariates=self.the_covariates)
+            else:
+                the_model.fit(self.the_train)
+                the_pred = the_model.predict(self.the_steps)
 
-    def exponential_predict(self, horizon: int) -> TimeSeries:
-        return self.exponential.predict(horizon)
+            # THE METRICS
+            the_mape = float(mape(self.the_test, the_pred))
+            the_mae = float(mae(self.the_test, the_pred))
+            the_mse = float(mse(self.the_test, the_pred))
 
-    def exponential_score(self, y_true: TimeSeries, y_pred: TimeSeries) -> float:
-        return float(smape(y_true, y_pred))
+            # LOG PARAMS & METRICS
+            mlflow.log_param("model", the_name)
+            mlflow.log_param("steps", self.the_steps)
+
+            if isinstance(the_model, ARIMA):
+                mlflow.log_param("p", getattr(the_model, "p", 2))
+                mlflow.log_param("d", getattr(the_model, "d", 0))
+                mlflow.log_param("q", getattr(the_model, "q", 2))
+
+            if isinstance(the_model, LinearRegressionModel):
+                mlflow.log_param("lags", 6)
+                if self.the_covariates is not None:
+                    mlflow.log_param("lags_past_covariates", 6)
+
+            mlflow.log_metric("mape", the_mape)
+            mlflow.log_metric("mae", the_mae)
+            mlflow.log_metric("mse", the_mse)
+
+        return {"pred": the_pred, "metrics": {"mape": the_mape, "mae": the_mae, "mse": the_mse}}
+
+
+    # RUN THE MODELS
+    def run_the_models(self):
+
+        # ARIMA
+        arima = ARIMA(p=2, d=0, q=2)
+        the_arima = self.model_template("ARIMA", arima)
+
+        # LINEAR
+        linear = LinearRegressionModel(
+            lags=6,
+            lags_past_covariates=6 if self.the_covariates is not None else None)
+        the_linear = self.model_template("LINEAR", linear)
+
+
+        return {"ARIMA": the_arima, "LINEAR": the_linear}

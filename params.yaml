@@ -1,13 +1,37 @@
-# THE PATH
+# PATHS
+
 data:
   raw_data: "data/raw/WEATHER.csv"
+  processed_path: "data/processed/CLEAN_WEATHER.csv"
 
-# THE OLUMNS
-the_time: "DATE"
+
+# CLEAN FILE
+use_processed: true
+
+# COLUMNS
+
+the_time: "date"
 the_target: "T"
-the_features: ["T", "P", "RH"]
+the_features: ["T", "p", "rh"]
 
-# MODEL PARAMETERS | # 12 MONTHS OR PERIODS
+# MODEL PARAMETERS
+
 test_size: 12
-the_arima_order: [1, 1, 1] 
-the_mlflow : "temperature_forecast"
+the_mlflow: "temperature_forecast"
+# PATHS
+data:
+  raw_data: "data/raw/WEATHER.csv"
+  processed_path: "data/processed/CLEAN_WEATHER.csv"
+
+# CLEAN FILE
+use_processed: true
+
+# COLUMNS
+the_time: "date"
+the_target: "T"
+the_features: ["T", "p", "rh"]
+
+# MODEL PARAMETERS
+test_size: 12
+the_steps: 300
+the_mlflow: "temperature_forecast"

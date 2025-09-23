@@ -1,60 +1,62 @@
 import pandas as pd
-from typing import Dict, Any, Tuple
+from pathlib import Path
 from darts import TimeSeries
-from darts.utils.model_selection import train_test_split
+from darts.dataprocessing.transformers import MissingValuesFiller
 
 
-# TRANSFORM
-class DataTransformation:
-    def __init__(self, df: pd.DataFrame, config: Dict[str, Any]):
-        self.config = config
+class WeatherTransform:
+    def __init__(self, df, params):
         self.df = df.copy()
+        self.params = params
+        self.y_series = None
+        self.covariates_series = None
 
-        # PLACEHOLDERS FOR DARTS SERIES
-        self.series_target: TimeSeries | None = None
-        self.series_features: TimeSeries | None = None
+    # CLEAN COLUMNS
+    def the_columns(self):
+        the_time = self.params["the_time"]
+        the_target = self.params["the_target"]
+        keep = [the_time] + self.params["the_features"]
 
-    # KEEP  TIME, TARGET & FEATURES | DATETIME + SORT
-    def the_columns(self) -> pd.DataFrame:
-        t = self.config["the_time"]
-        y = self.config["the_target"]
-        
-        all_features = list(self.config["the_features"])
+        self.df[the_time] = pd.to_datetime(self.df[the_time], errors="coerce")
+        self.df = self.df[keep].dropna(subset=[the_time]).sort_values(the_time)
+        self.df = self.df.drop_duplicates(subset=[the_time])
 
+    # SAVE CLEAN FILE
+    def save_clean_file(self):
+        clean_path = self.params["data"]["processed_path"]
+        Path(clean_path).parent.mkdir(parents=True, exist_ok=True)
+        self.df.to_csv(clean_path, index=False)
 
-        the_columns = [t, y] + all_features
-       
-        self.df = self.df[the_columns].copy()
-        self.df[t] = pd.to_datetime(self.df[t])
-        self.df = self.df.sort_values(t).reset_index(drop=True)
-       
-        return self.df
+    # BUILD SERIES
+    def build_series(self):
+        the_time = self.params["the_time"]
+        the_target = self.params["the_target"]
 
+        # MAKE SERIES FOR TARGET + COVARIATES
+        self.y_series = TimeSeries.from_dataframe(
+            self.df,
+            time_col=the_time,
+            value_cols=the_target,
+            fill_missing_dates=True,
+            freq=None,)
 
-    # BUILD SERIES FOR DARTS
-    def build_series(self) -> Tuple[TimeSeries, TimeSeries | None]:
-        t = self.config["the_time"]
-        y = self.config["the_target"]
-        series_features_only = [c for c in self.config["the_features"] if c != y]
+        the_covariates = [c for c in self.params["the_features"] if c != the_target]
+        if the_covariates:
+            self.covariates_series = TimeSeries.from_dataframe(
+                self.df,
+                time_col=the_time,
+                value_cols=the_covariates,
+                fill_missing_dates=True, freq=None,)
 
-        self.series_target = TimeSeries.from_dataframe(self.df, time_col=t, value_cols=y)
-        self.series_features = (TimeSeries.from_dataframe(self.df, time_col=t, value_cols=series_features_only)
-            if series_features_only else None)
-        
-        return self.series_target, self.series_features
-
+        # FILL ANY NANS WITH FORWARD/BACKWARD STRATEGY
+        filler = MissingValuesFiller()  # default: forward fill then backfill if needed
+        self.y_series = filler.transform(self.y_series)
+        if self.covariates_series is not None:
+            self.covariates_series = filler.transform(self.covariates_series)
 
     # TRAIN / TEST SPLIT
-    def divide_series(self, test_size: int | None = None) -> Tuple[TimeSeries, TimeSeries]:
-        if self.series_target is None:
-            raise ValueError("ERROR: CALL build_series() FIRST")
-       
-        if test_size is None:
-            test_size = int(self.config.get("test_size", 12))
-        train, test = train_test_split(self.series_target, test_size=test_size)
-        
+    def train_test_split(self):
+        test_size = int(self.params["test_size"])
+        train = self.y_series[:-test_size]
+        test = self.y_series[-test_size:]
         return train, test
-
-    # SAVE CLEAN DATAFRAME TO CSV IN data/processed/
-    def cleaned_data(self, path: str = "data/processed/CLEAN_WEATHER.csv") -> None:
-        self.df.to_csv(path, index=False)
