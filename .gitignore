@@ -20,3 +20,4 @@ logs/
 
 # SPHINX DOCS
 docs/_build/
+logfile.log
