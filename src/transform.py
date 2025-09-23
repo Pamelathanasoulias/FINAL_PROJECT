@@ -49,7 +49,7 @@ class WeatherTransform:
                 fill_missing_dates=True, freq=None,)
 
         # FILL ANY NANS WITH FORWARD/BACKWARD STRATEGY
-        filler = MissingValuesFiller()  # default: forward fill then backfill if needed
+        filler = MissingValuesFiller()
         self.y_series = filler.transform(self.y_series)
         if self.covariates_series is not None:
             self.covariates_series = filler.transform(self.covariates_series)

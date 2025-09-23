@@ -1,24 +1,4 @@
 # PATHS
-
-data:
-  raw_data: "data/raw/WEATHER.csv"
-  processed_path: "data/processed/CLEAN_WEATHER.csv"
-
-
-# CLEAN FILE
-use_processed: true
-
-# COLUMNS
-
-the_time: "date"
-the_target: "T"
-the_features: ["T", "p", "rh"]
-
-# MODEL PARAMETERS
-
-test_size: 12
-the_mlflow: "temperature_forecast"
-# PATHS
 data:
   raw_data: "data/raw/WEATHER.csv"
   processed_path: "data/processed/CLEAN_WEATHER.csv"

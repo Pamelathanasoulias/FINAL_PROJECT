@@ -26,7 +26,7 @@ def the_report(the_train, the_test, model_dictionary, out_dir="docs"):
         plt.savefig(plot_path, dpi=150)
         plt.close()
 
-        # ZOOM PLOT | ONLY TEST & PREDICTIONS
+        # PLOT | ONLY TEST & PREDICTIONS
         plt.figure(figsize=(8, 4))
         the_test.plot(label="TEST", lw=2, color="black")
         predictions.plot(label="PRED", lw=2, color="magenta")
@@ -39,7 +39,7 @@ def the_report(the_train, the_test, model_dictionary, out_dir="docs"):
         plt.savefig(zoom_path, dpi=150)
         plt.close()
 
-        # METRICS ROW
+        # METRICS
         rows.append({"MODEL": name,"MAPE": metrics["mape"],"MAE": metrics["mae"],"MSE": metrics["mse"],})
 
     # METRICS TABLE
